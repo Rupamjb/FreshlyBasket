@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "*.mjs": {
+      "runtime": "@vercel/node@2.15.11"
+    }
+  }
+} 

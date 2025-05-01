@@ -73,10 +73,9 @@ try {
   // Create a Vercel config file in the public folder
   log('Creating Vercel routes config...');
   fs.writeFileSync('./dist/vercel.json', JSON.stringify({
-    "routes": [
-      { "handle": "filesystem" },
-      { "src": "/api/(.*)", "dest": "/api/server.mjs" },
-      { "src": "/(.*)", "dest": "/index.html" }
+    "rewrites": [
+      { "source": "/api/(.*)", "destination": "/api/server.mjs" },
+      { "source": "/(.*)", "destination": "/index.html" }
     ]
   }, null, 2));
 
