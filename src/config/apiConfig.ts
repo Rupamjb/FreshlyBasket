@@ -7,7 +7,7 @@
 // In production, we'll use the URL from environment variables
 // In development, we'll use localhost
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? '' : 'http://localhost:5001');
+  (import.meta.env.PROD ? 'https://freshlybasket.onrender.com' : 'http://localhost:5001');
 
 // Backup API URL if primary fails
 export const BACKUP_API_BASE_URL = import.meta.env.VITE_BACKUP_API_BASE_URL || '';
@@ -22,13 +22,35 @@ export const MAX_RETRIES = 3;
  * Helper function to build API URLs
  */
 export const apiUrl = (path: string, useBackup: boolean = false): string => {
-  // Clean the path to avoid double /api segments
-  const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
+  // Clean the path to ensure it works with the backend
+  let cleanPath = path;
+  
+  // If we're using the Render backend, we might need to adjust the path
+  // based on how your backend routes are set up
   const baseUrl = useBackup && BACKUP_API_BASE_URL ? BACKUP_API_BASE_URL : API_BASE_URL;
+  
+  // Check if we're using the Render backend
+  if (baseUrl.includes('freshlybasket.onrender.com')) {
+    // Remove /api prefix if needed - adjust based on your actual backend API route structure
+    if (cleanPath.startsWith('/api/')) {
+      cleanPath = cleanPath.substring(4); // Remove "/api"
+    }
+    
+    // Log the final URL for debugging
+    const finalUrl = `${baseUrl}${cleanPath}`;
+    console.log('Final API URL:', finalUrl);
+    return finalUrl;
+  }
+  
+  // Handle the default case (local development)
+  // Clean the path to avoid double /api segments
+  if (!cleanPath.startsWith('/api')) {
+    cleanPath = `/api${cleanPath}`;
+  }
   
   // If the base URL already includes /api, remove it from the path
   if (baseUrl.endsWith('/api')) {
-    return `${baseUrl}${cleanPath.replace(/^\/api/, '')}`;
+    cleanPath = cleanPath.replace(/^\/api/, '');
   }
   
   return `${baseUrl}${cleanPath}`;
@@ -43,13 +65,15 @@ export const createFetchOptions = (
   includeToken: boolean = true,
   timeout: number = DEFAULT_TIMEOUT
 ): RequestInit => {
-  // Base options with credentials always included
+  // Base options with credentials
   const options: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json'
     },
-    credentials: 'include', // Always include cookies
+    // Use 'include' for same-origin cookies, 'omit' for cross-origin requests without cookies
+    credentials: import.meta.env.PROD ? 'omit' : 'include',
     signal: AbortSignal.timeout(timeout), // Add timeout
   };
 

@@ -86,6 +86,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       
+      // Log the API URL for debugging
+      console.log('Login API URL:', apiUrl('/api/users/login'));
+      
       // Make API call to login endpoint
       const response = await fetch(apiUrl('/api/users/login'), 
         createFetchOptions('POST', { email, password }, false)
@@ -134,10 +137,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       
+      // Log the API URL for debugging
+      console.log('Signup API URL:', apiUrl('/api/users/register'));
+      
       // Make API call to register endpoint
       const response = await fetch(apiUrl('/api/users/register'), 
         createFetchOptions('POST', { name, email, password }, false)
       );
+      
+      // Check for non-JSON responses before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If not JSON, try to get text content for debugging
+        const textContent = await response.text();
+        console.error('Received non-JSON response:', textContent.substring(0, 100) + '...');
+        throw new Error('Server returned an invalid response. Please try again later.');
+      }
       
       const data = await response.json();
       
@@ -147,7 +162,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Store token
       if (data.data.token) {
-      localStorage.setItem('token', data.data.token);
+        localStorage.setItem('token', data.data.token);
       }
       
       // Set user in state

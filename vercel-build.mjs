@@ -41,8 +41,19 @@ try {
   log('Starting enhanced build process...');
 
   // Run the standard build
-  log('Running Vite build...');
-  execSync('npm run build', { stdio: 'inherit' });
+  log('Running Vite build with custom environment...');
+  
+  // Set environment variables for the build
+  process.env.VITE_API_BASE_URL = 'https://freshlybasket.onrender.com';
+  
+  // Run the build command
+  execSync('npm run build', { 
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      VITE_API_BASE_URL: 'https://freshlybasket.onrender.com'
+    }
+  });
 
   // Ensure public directory is copied to the dist folder
   if (fs.existsSync('./public')) {
