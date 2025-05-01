@@ -130,6 +130,16 @@ function App() {
   useEffect(() => {
     const handleGlobalError = (event: ErrorEvent) => {
       console.error('Global error caught:', event.error);
+      
+      // Handle JSON parse errors specifically
+      if (event.error && event.error.message && 
+          (event.error.message.includes('Unexpected token') || 
+           event.error.message.includes('JSON.parse'))) {
+        console.error('JSON parsing error detected:', event.error);
+        // Show a user-friendly message or redirect to an error page
+        // This is likely caused by receiving HTML instead of JSON from the API
+      }
+      
       // Optionally redirect to error page for catastrophic errors
       if (event.error && event.error.message && event.error.message.includes('catastrophic')) {
         window.location.href = '/error?type=fatal&message=' + encodeURIComponent(event.error.message);

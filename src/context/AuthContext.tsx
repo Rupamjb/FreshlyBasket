@@ -91,6 +91,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         createFetchOptions('POST', { email, password }, false)
       );
       
+      // Check for non-JSON responses before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If not JSON, try to get text content for debugging
+        const textContent = await response.text();
+        console.error('Received non-JSON response:', textContent.substring(0, 100) + '...');
+        throw new Error('Server returned an invalid response. Please try again later.');
+      }
+      
       const data = await response.json();
       
       if (!response.ok) {
@@ -99,7 +108,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Store token
       if (data.data.token) {
-      localStorage.setItem('token', data.data.token);
+        localStorage.setItem('token', data.data.token);
       }
       
       // Set user in state

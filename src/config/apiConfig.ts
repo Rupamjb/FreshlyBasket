@@ -114,6 +114,25 @@ export const fetchWithRetry = async (
     
     // If response is successful, return it
     if (response.ok) {
+      // Check content type for successful responses too
+      const contentType = response.headers.get('content-type');
+      if (contentType && !contentType.includes('application/json') && 
+          // Only do this check for API endpoints that should return JSON
+          (url.includes('/api/') || 
+          (options.headers && 
+           typeof options.headers === 'object' && 
+           'Accept' in options.headers && 
+           options.headers['Accept'] === 'application/json'))) {
+        // Clone the response because we need to check its content
+        const clonedResponse = response.clone();
+        const textContent = await clonedResponse.text();
+        console.warn('Received non-JSON response from API:', textContent.substring(0, 100));
+        
+        // If this looks like HTML, it might be a 404 page from Vercel
+        if (textContent.includes('<!DOCTYPE html>') || textContent.includes('<html>')) {
+          throw new ApiError('Received HTML instead of JSON. The API endpoint might be unavailable.', 503);
+        }
+      }
       return response;
     }
     
@@ -138,7 +157,19 @@ export const fetchWithRetry = async (
     // If we're out of retries or it's a client error, parse the error response
     let errorData;
     try {
-      errorData = await response.json();
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        errorData = await response.json();
+      } else {
+        // If not JSON, get the raw text for debugging
+        const textContent = await response.text();
+        errorData = { 
+          message: 'Server returned an unexpected response format',
+          rawContent: textContent.substring(0, 100) 
+        };
+        console.error('Non-JSON error response:', textContent.substring(0, 100));
+      }
     } catch (e) {
       errorData = { message: 'An unknown error occurred' };
     }

@@ -49,12 +49,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onToggleToSign
       onClose();
       navigate('/');
     } catch (err: any) {
-      if (err?.message) {
+      // Enhanced error handling
+      console.error('Login error details:', err);
+      
+      if (err?.message?.includes('Unexpected token')) {
+        setError('Server connection error. The application might be redeploying. Please try again in a moment.');
+      } else if (err?.message) {
         setError(err.message);
       } else {
         setError('Invalid email or password. Please try again.');
       }
-      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
