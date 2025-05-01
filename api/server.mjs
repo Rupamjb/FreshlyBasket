@@ -11,6 +11,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default function handler(req, res) {
+  // Set CORS headers for all responses
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('Handling preflight CORS request');
+    return res.status(200).end();
+  }
+  
   // Log the request for debugging
   console.log(`Server Request: ${req.method} ${req.url}`);
   
@@ -95,26 +107,35 @@ function handleUserRequests(req, res, apiPath) {
   // Log for debugging
   console.log(`User API request: ${req.method} ${apiPath}`);
   
+  // Set proper CORS headers again for API routes
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
   // Check for exact patterns to match frontend requests
   if (apiPath === 'users/login' || apiPath === 'users/login/') {
+    console.log('Forwarding login request to auth handler');
     // Rewrite request URL for auth handler
     req.url = `/api/auth/login`;
     return authHandler(req, res);
   }
   
   if (apiPath === 'users/register' || apiPath === 'users/register/') {
+    console.log('Forwarding register request to auth handler');
     // Rewrite request URL for auth handler
     req.url = `/api/auth/register`;
     return authHandler(req, res);
   }
   
   if (apiPath === 'users/profile' || apiPath === 'users/profile/') {
+    console.log('Forwarding profile request to auth handler');
     // Rewrite request URL for auth handler
     req.url = `/api/auth/profile`;
     return authHandler(req, res);
   }
   
   if (apiPath === 'users/logout' || apiPath === 'users/logout/') {
+    console.log('Handling logout request');
     // Handle logout - just return success
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
@@ -124,6 +145,7 @@ function handleUserRequests(req, res, apiPath) {
   }
   
   // Default: endpoint not found
+  console.log('User API endpoint not found');
   res.setHeader('Content-Type', 'application/json');
   return res.status(404).json({
     success: false,

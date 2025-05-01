@@ -41,11 +41,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onToggleToSign
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login form submitted');
     setError('');
     setIsLoading(true);
 
     try {
+      // Log the data being sent
+      console.log('Submitting login with email:', email);
       await login(email, password);
+      
+      // If we reach here, login was successful
+      console.log('Login successful');
       onClose();
       navigate('/');
     } catch (err: any) {
@@ -73,7 +79,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onToggleToSign
           <FiX size={24} />
         </CloseButton>
         
-        <form className="form_container" onSubmit={handleSubmit}>
+        <form className="form_container" onSubmit={handleSubmit} noValidate>
           <div className="title_container">
             <LogoText><GreenText>Freshly</GreenText> <YellowText>Basket</YellowText></LogoText>
           </div>

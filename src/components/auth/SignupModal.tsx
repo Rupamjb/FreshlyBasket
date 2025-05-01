@@ -43,6 +43,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onToggleToLo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Signup form submitted');
     setError('');
 
     // Validate form inputs
@@ -59,7 +60,12 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onToggleToLo
     setIsLoading(true);
 
     try {
+      // Log the data being sent
+      console.log('Submitting signup with data:', { name, email, password });
       await signup(name, email, password);
+      
+      // If we reach here, signup was successful
+      console.log('Signup successful');
       onClose();
       navigate('/');
     } catch (err) {
@@ -80,7 +86,7 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onToggleToLo
           <FiX size={24} />
         </CloseButton>
         
-        <form className="form_container" onSubmit={handleSubmit}>
+        <form className="form_container" onSubmit={handleSubmit} noValidate>
           <div className="title_container">
             <LogoText><GreenText>Freshly</GreenText> <YellowText>Basket</YellowText></LogoText>
           </div>
