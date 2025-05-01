@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Login from '../components/auth/Login';
-import Signup from '../components/auth/Signup';
+import { Login, Signup } from '../components/auth/AuthPageComponents';
 import PageTransition from '../components/ui/PageTransition';
 import { motion } from 'framer-motion';
 
