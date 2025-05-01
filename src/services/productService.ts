@@ -1,5 +1,5 @@
 // Define product types
-import { apiUrl, createFetchOptions } from '../config/apiConfig';
+import { apiUrl, createFetchOptions, apiRequest } from '../config/apiConfig';
 
 export interface Product {
   id: string;
@@ -406,133 +406,68 @@ export const getProducts = async (
   sortOrder: 'asc' | 'desc' = 'desc'
 ): Promise<{ products: Product[], total: number }> => {
   try {
-    // Build query parameters
-    const params = new URLSearchParams();
-    if (category) params.append('category', category);
-    if (searchQuery) params.append('search', searchQuery);
-    if (limit) params.append('limit', limit.toString());
-    if (page) params.append('page', page.toString());
+    // Build query params
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append('category', category);
+    if (searchQuery) queryParams.append('search', searchQuery);
+    if (limit) queryParams.append('limit', limit.toString());
+    if (page) queryParams.append('page', page.toString());
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    if (sortOrder) queryParams.append('sortOrder', sortOrder);
     
-    // Sort parameters
-    const sort = sortOrder === 'desc' ? `-${sortBy}` : sortBy;
-    params.append('sort', sort);
+    const url = `${apiUrl(`/products?${queryParams.toString()}`)}`;
+    const options = createFetchOptions('GET');
     
-    // Fetch products from API - using the direct route to avoid controller issues
-    const response = await fetch(
-      `${apiUrl('/api/direct/products')}?${params.toString()}`,
-      createFetchOptions('GET', undefined, false)
+    // Use the enhanced apiRequest with fallback data
+    return await apiRequest<{ products: Product[], total: number }>(
+      url, 
+      options, 
+      // Fallback data in case of API failure
+      { 
+        products: category 
+          ? mockProducts.filter(p => p.category.toLowerCase() === category.toLowerCase()) 
+          : mockProducts, 
+        total: mockProducts.length 
+      }
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    
-    // Transform products from MongoDB format to frontend format
-    const transformedProducts = result.data.map(transformProduct);
-    
-    return {
-      products: transformedProducts,
-      total: result.total || result.count || transformedProducts.length
-    };
   } catch (error) {
-    console.error('Error fetching products from API:', error);
-    
-    // Fallback to mock data in case of errors
-    console.warn('Using mock data as fallback');
-    
-    // Apply filters to mock data
-    let filteredProducts = [...mockProducts];
-    
-    // Filter by category
-    if (category) {
-      filteredProducts = filteredProducts.filter(
-        p => p.category.toLowerCase() === category.toLowerCase() ||
-             p.subcategory?.toLowerCase() === category.toLowerCase()
-      );
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filteredProducts = filteredProducts.filter(
-        p => p.name.toLowerCase().includes(query) ||
-             p.description.toLowerCase().includes(query) ||
-             p.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Sort products
-    filteredProducts.sort((a, b) => {
-      const aValue = a[sortBy as keyof Product];
-      const bValue = b[sortBy as keyof Product];
-
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortOrder === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-
-      return 0;
-    });
-
-    // Calculate pagination
-    const total = filteredProducts.length;
-    
-    if (limit) {
-      const startIndex = (page - 1) * limit;
-      filteredProducts = filteredProducts.slice(startIndex, startIndex + limit);
-    }
-
-    return { products: filteredProducts, total };
+    console.error('Error fetching products:', error);
+    // Return mock data in case of any error
+    const filteredProducts = category 
+      ? mockProducts.filter(p => p.category.toLowerCase() === category.toLowerCase()) 
+      : mockProducts;
+    return { 
+      products: filteredProducts, 
+      total: filteredProducts.length 
+    };
   }
 };
 
 // Get a single product by ID
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    // Try to get the product from the direct products route first
-    const response = await fetch(
-      apiUrl(`/api/direct/products`),
-      createFetchOptions('GET', undefined, false)
+    const url = apiUrl(`/products/${id}`);
+    const options = createFetchOptions('GET');
+    
+    // Use enhanced apiRequest with fallback to mock data
+    const product = await apiRequest<Product | null>(
+      url,
+      options,
+      // Find a matching product from mock data as fallback
+      mockProducts.find(p => p.id === id) || null
     );
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    
-    // Find the product by ID in the returned data
-    const product = result.data.find((p: any) => p._id === id);
-    
-    if (!product) {
-      // If not found in the direct route, try the original product endpoint
-      const singleResponse = await fetch(
-        apiUrl(`/api/products/${id}`),
-        createFetchOptions('GET', undefined, false)
-      );
-      
-      if (!singleResponse.ok) {
-        throw new Error(`API error: ${singleResponse.status}`);
-      }
-      
-      const singleResult = await singleResponse.json();
-      return transformProduct(singleResult.data);
-    }
     
     return transformProduct(product);
   } catch (error) {
-    console.error('Error fetching product by ID:', error);
+    console.error(`Error fetching product with ID ${id}:`, error);
     
-    // Fallback to mock data
+    // As a fallback, try to find the product in our mock data
     const mockProduct = mockProducts.find(p => p.id === id);
-    return mockProduct || null;
+    if (mockProduct) {
+      return mockProduct;
+    }
+    
+    return null;
   }
 };
 

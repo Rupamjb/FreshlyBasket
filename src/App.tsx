@@ -1,5 +1,5 @@
-import React, { Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React, { Suspense, useEffect, useState, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import BackToTop from './components/ui/BackToTop';
 import LoadingScreen from './components/ui/LoadingScreen';
@@ -10,33 +10,99 @@ import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { OrderProvider } from './context/OrderContext'
 import AuthModalsProvider from './components/auth/AuthModals'
+import ErrorBoundary from './components/ui/ErrorBoundary';
+import NetworkStatusMonitor from './components/ui/NetworkStatusMonitor';
 
 // Lazy load pages for better performance
-const Home = React.lazy(() => import('./pages/Home'));
-const ProductListing = React.lazy(() => import('./pages/ProductListing'));
-const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
-const Cart = React.lazy(() => import('./pages/Cart'));
-const Checkout = React.lazy(() => import('./pages/Checkout'));
-const AuthPage = React.lazy(() => import('./pages/AuthPage'));
-const Profile = React.lazy(() => import('./pages/Profile'));
-const NotFound = React.lazy(() => import('./pages/NotFound'));
+const Home = lazy(() => import('./pages/Home'));
+const ProductListing = lazy(() => import('./pages/ProductListing'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const Profile = lazy(() => import('./pages/Profile'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
+// Handle React Suspense loading errors
+const SuspenseWithErrorBoundary = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary navigate={true}>
+    <Suspense fallback={<LoadingScreen message="Loading page..." />}>
+      {children}
+    </Suspense>
+  </ErrorBoundary>
+);
 
 // Location wrapper for AnimatePresence to work with react-router
 function AnimatedRoutes() {
   const location = useLocation();
   
+  // Handle 404 errors from URL
+  useEffect(() => {
+    // Clear any error state when navigating
+    const params = new URLSearchParams(location.search);
+    if (params.has('code') && params.get('code') === 'NOT_FOUND') {
+      console.warn('Navigated to a 404 error page with code:', params.get('code'));
+    }
+  }, [location]);
+  
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<ProductListing />} />
-        <Route path="/products/:category" element={<ProductListing />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/" element={
+          <SuspenseWithErrorBoundary>
+            <Home />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/products" element={
+          <SuspenseWithErrorBoundary>
+            <ProductListing />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/products/:category" element={
+          <SuspenseWithErrorBoundary>
+            <ProductListing />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/product/:id" element={
+          <SuspenseWithErrorBoundary>
+            <ProductDetail />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/cart" element={
+          <SuspenseWithErrorBoundary>
+            <Cart />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/checkout" element={
+          <SuspenseWithErrorBoundary>
+            <Checkout />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/auth" element={
+          <SuspenseWithErrorBoundary>
+            <AuthPage />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/profile" element={
+          <SuspenseWithErrorBoundary>
+            <Profile />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/error" element={
+          <SuspenseWithErrorBoundary>
+            <NotFound />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="/404" element={
+          <SuspenseWithErrorBoundary>
+            <NotFound />
+          </SuspenseWithErrorBoundary>
+        } />
+        <Route path="*" element={
+          <SuspenseWithErrorBoundary>
+            <NotFound />
+          </SuspenseWithErrorBoundary>
+        } />
       </Routes>
     </AnimatePresence>
   );
@@ -54,32 +120,48 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Global error handler for uncaught exceptions
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event.error);
+      // Optionally redirect to error page for catastrophic errors
+      if (event.error && event.error.message && event.error.message.includes('catastrophic')) {
+        window.location.href = '/error?type=fatal&message=' + encodeURIComponent(event.error.message);
+        event.preventDefault(); // Prevent default error handling
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    return () => window.removeEventListener('error', handleGlobalError);
+  }, []);
+
   if (isLoading) {
     return <LoadingScreen message="Getting things ready..." />;
   }
 
   return (
     <Router>
-      <AuthProvider>
-        <CartProvider>
-          <OrderProvider>
-            <ToastProvider>
-              <AuthModalsProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-grow">
-                    <Suspense fallback={<LoadingScreen message="Loading page..." />}>
+      <ErrorBoundary>
+        <ToastProvider>
+          <AuthProvider>
+            <CartProvider>
+              <OrderProvider>
+                <AuthModalsProvider>
+                  <NetworkStatusMonitor />
+                  <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-grow">
                       <AnimatedRoutes />
-                    </Suspense>
-                  </main>
-                  <Footer />
-                  <BackToTop />
-                </div>
-              </AuthModalsProvider>
-            </ToastProvider>
-          </OrderProvider>
-        </CartProvider>
-      </AuthProvider>
+                    </main>
+                    <Footer />
+                    <BackToTop />
+                  </div>
+                </AuthModalsProvider>
+              </OrderProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ErrorBoundary>
     </Router>
   );
 }

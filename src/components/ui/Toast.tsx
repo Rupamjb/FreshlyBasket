@@ -1,26 +1,30 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FiX, FiInfo, FiAlertCircle, FiCheckCircle, FiWifi, FiWifiOff } from 'react-icons/fi';
+import { createPortal } from 'react-dom';
 
 // Types for toast data
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export type ToastType = 'success' | 'error' | 'info' | 'warning' | 'offline';
 
-export interface ToastData {
+export interface Toast {
   id: string;
   message: string;
   type: ToastType;
   duration?: number;
+  timestamp: number;
 }
 
 // Context for toast functionality
 interface ToastContextProps {
-  showToast: (message: string, type: ToastType, duration?: number) => void;
-  hideToast: (id: string) => void;
+  addToast: (message: string, type: ToastType, duration?: number) => void;
+  removeToast: (id: string) => void;
+  clearToasts: () => void;
 }
 
 const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 
 // Toast component showing a single notification
-const Toast: React.FC<ToastData & { onClose: () => void }> = ({ 
+const Toast: React.FC<Toast & { onClose: () => void }> = ({ 
   message, 
   type, 
   onClose 
@@ -30,29 +34,25 @@ const Toast: React.FC<ToastData & { onClose: () => void }> = ({
     success: 'bg-green-50 text-green-800 border-green-500',
     error: 'bg-red-50 text-red-800 border-red-500',
     info: 'bg-blue-50 text-blue-800 border-blue-500',
-    warning: 'bg-yellow-50 text-yellow-800 border-yellow-500'
+    warning: 'bg-yellow-50 text-yellow-800 border-yellow-500',
+    offline: 'bg-neutral-50 text-neutral-800 border-neutral-200'
   };
 
   const icons = {
     success: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-      </svg>
+      <FiCheckCircle className="w-5 h-5" />
     ),
     error: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-      </svg>
+      <FiAlertCircle className="w-5 h-5" />
     ),
     info: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-      </svg>
+      <FiInfo className="w-5 h-5" />
     ),
     warning: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-      </svg>
+      <FiInfo className="w-5 h-5" />
+    ),
+    offline: (
+      <FiWifiOff className="w-5 h-5" />
     )
   };
 
@@ -74,9 +74,7 @@ const Toast: React.FC<ToastData & { onClose: () => void }> = ({
       
       {/* Close button */}
       <button onClick={onClose} className="ml-4 text-gray-500 hover:text-gray-700">
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <FiX className="w-4 h-4" />
       </button>
     </motion.div>
   );
@@ -84,43 +82,164 @@ const Toast: React.FC<ToastData & { onClose: () => void }> = ({
 
 // Provider component that manages all toasts
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
   
-  const showToast = (message: string, type: ToastType = 'info', duration = 5000) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, message, type, duration };
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      addToast('You are back online', 'success');
+    };
     
-    setToasts(prev => [...prev, newToast]);
+    const handleOffline = () => {
+      setIsOffline(true);
+      addToast('You are offline. Some features may be unavailable.', 'offline', 0); // 0 means it won't auto-dismiss
+    };
     
-    // Auto-remove toast after duration
-    if (duration !== Infinity) {
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Check initial state
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
+  // Generate a unique ID for each toast
+  const generateUniqueId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  };
+  
+  // Add a new toast
+  const addToast = (message: string, type: ToastType, duration = 5000) => {
+    const newToast: Toast = {
+      id: generateUniqueId(),
+      message,
+      type,
+      duration,
+      timestamp: Date.now()
+    };
+    
+    // Remove any duplicate offline messages if this is an offline message
+    if (type === 'offline') {
+      setToasts(prev => [...prev.filter(t => t.type !== 'offline'), newToast]);
+    } else {
+      setToasts(prev => [...prev, newToast]);
+    }
+    
+    // Auto-remove toast after duration (if not 0)
+    if (duration > 0) {
       setTimeout(() => {
-        hideToast(id);
+        removeToast(newToast.id);
       }, duration);
     }
   };
   
-  const hideToast = (id: string) => {
+  // Remove a toast by ID
+  const removeToast = (id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
   
+  // Clear all toasts
+  const clearToasts = () => {
+    setToasts([]);
+  };
+  
   return (
-    <ToastContext.Provider value={{ showToast, hideToast }}>
+    <ToastContext.Provider value={{ addToast, removeToast, clearToasts }}>
       {children}
-      
-      {/* Toast container - fixed position at bottom right */}
-      <div className="fixed bottom-4 right-4 z-50 w-72">
-        <AnimatePresence>
-          {toasts.map(toast => (
-            <Toast
-              key={toast.id}
-              {...toast}
-              onClose={() => hideToast(toast.id)}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
+      {createPortal(
+        <ToastContainer toasts={toasts} removeToast={removeToast} />,
+        document.body
+      )}
     </ToastContext.Provider>
+  );
+};
+
+// Toast Container Component
+const ToastContainer: React.FC<{ 
+  toasts: Toast[]; 
+  removeToast: (id: string) => void;
+}> = ({ toasts, removeToast }) => {
+  return (
+    <div className="fixed bottom-0 right-0 z-50 p-4 max-h-screen overflow-hidden flex flex-col-reverse space-y-reverse space-y-2 pointer-events-none">
+      <AnimatePresence>
+        {toasts.map(toast => (
+          <ToastItem 
+            key={toast.id} 
+            toast={toast} 
+            onClose={() => removeToast(toast.id)} 
+          />
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Toast Item Component
+const ToastItem: React.FC<{ 
+  toast: Toast; 
+  onClose: () => void;
+}> = ({ toast, onClose }) => {
+  const getIcon = () => {
+    switch (toast.type) {
+      case 'success':
+        return <FiCheckCircle className="w-5 h-5" />;
+      case 'error':
+        return <FiAlertCircle className="w-5 h-5" />;
+      case 'warning':
+        return <FiInfo className="w-5 h-5" />;
+      case 'offline':
+        return <FiWifiOff className="w-5 h-5" />;
+      default:
+        return <FiInfo className="w-5 h-5" />;
+    }
+  };
+  
+  const getToastStyles = () => {
+    switch (toast.type) {
+      case 'success':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'error':
+        return 'bg-red-50 border-red-200 text-red-800';
+      case 'warning':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'offline':
+        return 'bg-neutral-50 border-neutral-200 text-neutral-800';
+      default:
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+    }
+  };
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+      className={`pointer-events-auto w-72 md:w-96 rounded-lg shadow-lg border px-4 py-3 flex items-start ${getToastStyles()}`}
+    >
+      <div className="flex-shrink-0 mr-3">
+        {getIcon()}
+      </div>
+      <div className="flex-1 mr-2">
+        <p className="text-sm">{toast.message}</p>
+      </div>
+      <div>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-500 focus:outline-none"
+          aria-label="Close"
+        >
+          <FiX className="w-4 h-4" />
+        </button>
+      </div>
+    </motion.div>
   );
 };
 
@@ -131,4 +250,6 @@ export const useToast = () => {
     throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
-}; 
+};
+
+export default ToastProvider; 
