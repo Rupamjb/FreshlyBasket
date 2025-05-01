@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { apiUrl, createFetchOptions } from '../config/apiConfig';
+import { createFetchOptions } from '../config/apiConfig';
 
 // Define user type
 interface User {
