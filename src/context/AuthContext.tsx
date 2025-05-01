@@ -65,12 +65,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           if (response.ok) {
             const data = await response.json();
+            
+            // Handle different response formats
+            const userData = data.data || data;
+            
             setUser({
-              id: data.data._id,
-              name: data.data.name,
-              email: data.data.email,
-              phone: data.data.phone,
-              addresses: data.data.addresses
+              id: userData._id || userData.id,
+              name: userData.name,
+              email: userData.email,
+              phone: userData.phone,
+              addresses: userData.addresses || []
             });
           } else {
             // If token is invalid, clear it
@@ -98,6 +102,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Use proxy endpoint for login to avoid CORS
       let loginUrl;
       if (apiUrl('/api/users/login').includes('freshlybasket.onrender.com')) {
+        // Use direct path without any extra parameters to prevent URL encoding issues
         loginUrl = '/api/proxy/users/login';
         console.log('Using proxy for login API URL:', loginUrl);
       } else {
@@ -131,18 +136,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(data.message || 'Login failed');
       }
       
-      // Store token
-      if (data.data && data.data.token) {
+      // Store token - handle different response formats
+      if (data.token) {
+        // Direct token in response
+        localStorage.setItem('token', data.token);
+      } else if (data.data && data.data.token) {
+        // Token in data object
         localStorage.setItem('token', data.data.token);
       }
       
-      // Set user in state
+      // Set user in state - handle different response formats
+      const userData = data.data || data;
       setUser({
-        id: data.data.id || data.data._id,
-        name: data.data.name,
-        email: data.data.email,
-        phone: data.data.phone,
-        addresses: data.data.addresses || []
+        id: userData.id || userData._id,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        addresses: userData.addresses || []
       });
       
       return data;
@@ -162,6 +172,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Use proxy endpoint for signup to avoid CORS
       let signupUrl;
       if (apiUrl('/api/users/register').includes('freshlybasket.onrender.com')) {
+        // Use direct path without any extra parameters to prevent URL encoding issues
         signupUrl = '/api/proxy/users/register';
         console.log('Using proxy for signup API URL:', signupUrl);
       } else {
@@ -195,18 +206,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(data.message || 'Signup failed');
       }
       
-      // Store token
-      if (data.data && data.data.token) {
+      // Store token - handle different response formats
+      if (data.token) {
+        // Direct token in response
+        localStorage.setItem('token', data.token);
+      } else if (data.data && data.data.token) {
+        // Token in data object
         localStorage.setItem('token', data.data.token);
       }
       
-      // Set user in state
+      // Set user in state - handle different response formats
+      const userData = data.data || data;
       setUser({
-        id: data.data.id || data.data._id,
-        name: data.data.name,
-        email: data.data.email,
-        phone: data.data.phone,
-        addresses: data.data.addresses || []
+        id: userData.id || userData._id,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        addresses: userData.addresses || []
       });
       
       return data;

@@ -28,7 +28,28 @@ export default async function handler(req, res) {
     targetPath = url.substring('/proxy/'.length);
   }
 
-  console.log(`Proxying to: ${renderUrl}/${targetPath}`);
+  // Clean up targetPath by removing any duplicated query parameters
+  // The issue is that ?path=users%2Fregister is being appended to the actual path
+  if (targetPath.includes('?')) {
+    // Remove any ?path= query params that might have been incorrectly added 
+    // by the URL rewriting in vercel.json or middleware
+    if (targetPath.includes('?path=')) {
+      targetPath = targetPath.split('?path=')[0];
+    }
+    
+    // If there's a URL encoding of users/register or similar in the path
+    // this is likely duplicative and should be removed
+    const queryStartIndex = targetPath.indexOf('?');
+    const queryString = targetPath.substring(queryStartIndex);
+    
+    if (queryString.includes('%2F')) { // URL-encoded slashes
+      // This is likely a mistake; use just the path part
+      targetPath = targetPath.substring(0, queryStartIndex);
+    }
+  }
+
+  console.log(`Cleaned path for proxying: ${targetPath}`);
+  console.log(`Final proxy URL: ${renderUrl}/${targetPath}`);
 
   try {
     // Parse request body if present
@@ -87,6 +108,32 @@ export default async function handler(req, res) {
 
     // Log response for debugging
     console.log(`Proxy response status: ${response.status}`);
+
+    // Handle auth endpoints specially
+    if (targetPath.startsWith('users/login') || 
+        targetPath.startsWith('users/register') || 
+        targetPath.startsWith('users/profile') || 
+        targetPath.startsWith('users/logout')) {
+      console.log('Handling auth endpoint specially');
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          console.log('Auth response shape:', Object.keys(data));
+          return res.json(data);
+        } else {
+          const text = await response.text();
+          console.log(`Non-JSON auth response: ${text.substring(0, 100)}...`);
+          return res.send(text);
+        }
+      } catch (error) {
+        console.error('Error handling auth response:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error processing auth response from Render backend',
+          error: error.message
+        });
+      }
+    }
 
     // Handle product data special case
     if (targetPath === '' || targetPath === '/' || targetPath.startsWith('?')) {
