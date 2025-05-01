@@ -22,10 +22,16 @@ export const MAX_RETRIES = 3;
  * Helper function to build API URLs
  */
 export const apiUrl = (path: string, useBackup: boolean = false): string => {
-  // Make sure path starts with /api
-  const apiPath = path.startsWith('/api') ? path : `/api${path}`;
+  // Clean the path to avoid double /api segments
+  const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
   const baseUrl = useBackup && BACKUP_API_BASE_URL ? BACKUP_API_BASE_URL : API_BASE_URL;
-  return `${baseUrl}${apiPath}`;
+  
+  // If the base URL already includes /api, remove it from the path
+  if (baseUrl.endsWith('/api')) {
+    return `${baseUrl}${cleanPath.replace(/^\/api/, '')}`;
+  }
+  
+  return `${baseUrl}${cleanPath}`;
 };
 
 /**

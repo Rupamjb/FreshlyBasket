@@ -50,6 +50,27 @@ app.use((req, res, next) => {
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Root route handler
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'FreshlyBasket API',
+    version: '1.0.0',
+    status: 'online',
+    environment: process.env.NODE_ENV || 'development',
+    documentation: '/api/docs',
+    endpoints: [
+      { path: '/api/products', description: 'Product management' },
+      { path: '/api/categories', description: 'Category management' },
+      { path: '/api/users', description: 'User management' },
+      { path: '/api/cart', description: 'Shopping cart operations' },
+      { path: '/api/orders', description: 'Order processing' },
+      { path: '/api/reviews', description: 'Product reviews' },
+      { path: '/api/health', description: 'API health check' }
+    ],
+    message: 'Welcome to FreshlyBasket API. This is the backend service for the FreshlyBasket e-commerce platform.'
+  });
+});
+
 // API Routes
 app.get('/api/health', (req, res) => {
   res.status(200).json({ 

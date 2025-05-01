@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "vite",
   "builds": [
     {
       "src": "package.json",
@@ -11,14 +14,6 @@
   ],
   "routes": [
     {
-      "src": "/assets/.*\\.js$",
-      "headers": {
-        "content-type": "application/javascript; charset=utf-8",
-        "cache-control": "public, max-age=31536000, immutable"
-      },
-      "continue": true
-    },
-    {
       "src": "/assets/(.*)",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
@@ -26,15 +21,30 @@
       "continue": true
     },
     {
-      "src": "/favicon.svg",
+      "src": "/(assets|images)/.*",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
-      },
-      "continue": true
+      }
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/robots.txt"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "https://freshlybasket.onrender.com/api",
+    "VITE_BACKUP_API_BASE_URL": "https://freshlybasket-api.onrender.com/api"
+  }
 } 
