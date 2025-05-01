@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { apiUrl, createFetchOptions, logApiRequest } from '../config/apiConfig';
+import { apiUrl, createFetchOptions, apiRequest } from '../config/apiConfig';
 
 // Define cart item type
 export interface CartItem {
@@ -160,24 +160,17 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         console.log('User authenticated:', isAuthenticated);
         
         try {
-          // Add to API cart using the logApiRequest helper
+          // Add to API cart using the apiRequest helper
           const options = createFetchOptions('POST', {
             productId: item.productId,
             quantity: item.quantity || 1
           });
           
-          const response = await logApiRequest(
+          const data = await apiRequest(
             apiUrl('/api/cart/items'),
-            options
+            options,
+            { success: false, message: 'Server error', data: { items: [] } }
           );
-          
-          if (!response.ok) {
-            // If server returns an error, fall back to client-side cart
-            console.warn(`Server returned ${response.status}, using fallback`);
-            throw new Error(`Server error: ${response.status}`);
-          }
-          
-          const data = await response.json();
           
           if (data.success) {
             // Format the items to match our CartItem interface
