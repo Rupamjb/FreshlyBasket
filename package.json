@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "server": "cd server && npm run dev",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "vercel-build": "vite build"
+    "postbuild": "node build-vercel.js",
+    "vercel-build": "npm run build && npm run postbuild"
   },
   "dependencies": {
     "@types/cookie-parser": "^1.4.8",

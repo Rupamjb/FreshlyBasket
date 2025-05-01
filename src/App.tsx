@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useState, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import BackToTop from './components/ui/BackToTop';
 import LoadingScreen from './components/ui/LoadingScreen';
@@ -146,29 +146,27 @@ function App() {
   }
 
   return (
-    <Router>
-      <ErrorBoundary>
-        <ToastProvider>
-          <AuthProvider>
-            <CartProvider>
-              <OrderProvider>
-                <AuthModalsProvider>
-                  <NetworkStatusMonitor />
-                  <div className="flex flex-col min-h-screen">
-                    <Header />
-                    <main className="flex-grow">
-                      <AnimatedRoutes />
-                    </main>
-                    <Footer />
-                    <BackToTop />
-                  </div>
-                </AuthModalsProvider>
-              </OrderProvider>
-            </CartProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </ErrorBoundary>
-    </Router>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <CartProvider>
+            <OrderProvider>
+              <AuthModalsProvider>
+                <NetworkStatusMonitor />
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow">
+                    <AnimatedRoutes />
+                  </main>
+                  <Footer />
+                  <BackToTop />
+                </div>
+              </AuthModalsProvider>
+            </OrderProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
