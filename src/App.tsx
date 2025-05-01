@@ -38,6 +38,12 @@ function AnimatedRoutes() {
   
   // Handle 404 errors from URL
   useEffect(() => {
+    // Check if we're loading a direct route and apply special handling
+    if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/index.html')) {
+      // Log the navigation for debugging
+      console.info('Deep navigation to:', window.location.pathname);
+    }
+    
     // Clear any error state when navigating
     const params = new URLSearchParams(location.search);
     if (params.has('code') && params.get('code') === 'NOT_FOUND') {

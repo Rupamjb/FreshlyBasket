@@ -23,6 +23,13 @@ const mimeTypeFix: Plugin = {
                   'content-type': 'application/javascript; charset=utf-8',
                   'cache-control': 'public, max-age=31536000, immutable'
                 }
+              },
+              { 
+                handle: 'filesystem'
+              },
+              {
+                src: '/(.*)',
+                dest: '/index.html'
               }
             ]
           }, null, 2)
