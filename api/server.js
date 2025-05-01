@@ -1,19 +1,19 @@
-// Vercel API handler for SPA routing
+// Vercel serverless function to handle SPA routing
+const fs = require('fs');
+const path = require('path');
+
 module.exports = (req, res) => {
-  // Set proper headers
-  res.setHeader('Content-Type', 'text/html');
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  
-  // Serve the index.html file for all paths
-  const fs = require('fs');
-  const path = require('path');
-  
   try {
-    const filePath = path.join(__dirname, '../dist/index.html');
-    const content = fs.readFileSync(filePath, 'utf8');
-    res.status(200).send(content);
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'text/html');
+    
+    // Serve the index.html for all paths - SPA routing
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    const html = fs.readFileSync(indexPath, 'utf8');
+    
+    return res.status(200).send(html);
   } catch (error) {
-    console.error('Error serving SPA:', error);
-    res.status(500).send('Server Error');
+    console.error('Error in SPA handler:', error);
+    return res.status(500).send('Internal Server Error');
   }
 }; 

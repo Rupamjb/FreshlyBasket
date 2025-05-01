@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "node -e \"const fs = require('fs'); fs.writeFileSync('./dist/vercel.json', JSON.stringify({version: 2, routes: [{handle: 'filesystem'}, {src: '/(.*)', dest: '/index.html'}]}, null, 2)); fs.copyFileSync('./dist/index.html', './dist/404.html');\"",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "cd server && npm run dev",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "postbuild": "node build-vercel.js && echo '{\"routes\":[{\"src\":\"/(.*)\",\"dest\":\"/index.html\"}]}' > dist/vercel.json",
     "vercel-build": "npm run build"
   },
   "dependencies": {
