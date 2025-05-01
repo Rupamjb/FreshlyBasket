@@ -19,17 +19,24 @@ export default function handler(req, res) {
     if (req.url.startsWith('/api/')) {
       // Extract API path
       const apiPath = req.url.substring(5); // Remove "/api/" prefix
+      console.log(`API path detected: "${apiPath}"`);
       
       // Route to specific API handlers based on path
-      if (apiPath.startsWith('users/')) {
+      if (apiPath.startsWith('users')) {
         return handleUserRequests(req, res, apiPath);
+      }
+      
+      // Handle direct auth endpoints 
+      if (apiPath.startsWith('auth')) {
+        return authHandler(req, res);
       }
       
       // Default: API endpoint not found
       res.setHeader('Content-Type', 'application/json');
       return res.status(404).json({
         success: false,
-        message: 'API endpoint not found'
+        message: 'API endpoint not found',
+        path: apiPath
       });
     }
     
@@ -85,25 +92,35 @@ export default function handler(req, res) {
 
 // Handle user API requests
 function handleUserRequests(req, res, apiPath) {
-  // Route different user API endpoints
-  const path = apiPath.substring(6); // Remove "users/" prefix
+  // Log for debugging
+  console.log(`User API request: ${req.method} ${apiPath}`);
   
-  if (path === 'login') {
+  // Check for exact patterns to match frontend requests
+  if (apiPath === 'users/login' || apiPath === 'users/login/') {
     // Rewrite request URL for auth handler
     req.url = `/api/auth/login`;
     return authHandler(req, res);
   }
   
-  if (path === 'register') {
+  if (apiPath === 'users/register' || apiPath === 'users/register/') {
     // Rewrite request URL for auth handler
     req.url = `/api/auth/register`;
     return authHandler(req, res);
   }
   
-  if (path === 'profile') {
+  if (apiPath === 'users/profile' || apiPath === 'users/profile/') {
     // Rewrite request URL for auth handler
     req.url = `/api/auth/profile`;
     return authHandler(req, res);
+  }
+  
+  if (apiPath === 'users/logout' || apiPath === 'users/logout/') {
+    // Handle logout - just return success
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
   }
   
   // Default: endpoint not found

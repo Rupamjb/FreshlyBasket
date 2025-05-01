@@ -37,9 +37,21 @@ export default function handler(req, res) {
   
   // Extract the path from the URL
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const path = url.pathname.replace(/^\/api\/auth/, '');
+  let path = url.pathname;
   
-  console.log(`Auth API request: ${req.method} ${path}`);
+  // Clean up path to handle different formats
+  if (path.startsWith('/api/auth')) {
+    path = path.substring(9); // Remove "/api/auth"
+  } else if (path.startsWith('/auth')) {
+    path = path.substring(5); // Remove "/auth"
+  }
+  
+  // Remove trailing slash if present
+  if (path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+  
+  console.log(`Auth API request: ${req.method} ${path} (original URL: ${req.url})`);
 
   // Set content type for all responses
   res.setHeader('Content-Type', 'application/json');
@@ -47,24 +59,25 @@ export default function handler(req, res) {
   // Handle different auth endpoints
   try {
     // Login endpoint
-    if (path === '/login' && req.method === 'POST') {
+    if ((path === '/login' || path === 'login') && req.method === 'POST') {
       return handleLogin(req, res);
     }
     
     // Register endpoint
-    if (path === '/register' && req.method === 'POST') {
+    if ((path === '/register' || path === 'register') && req.method === 'POST') {
       return handleRegister(req, res);
     }
     
     // Profile endpoint
-    if (path === '/profile' && req.method === 'GET') {
+    if ((path === '/profile' || path === 'profile') && (req.method === 'GET' || req.method === 'OPTIONS')) {
       return handleGetProfile(req, res);
     }
     
     // Default: endpoint not found
     return res.status(404).json({
       success: false,
-      message: 'Auth endpoint not found'
+      message: 'Auth endpoint not found',
+      path: path
     });
   } catch (error) {
     console.error('Auth API error:', error);
@@ -78,16 +91,38 @@ export default function handler(req, res) {
 // Parse JSON body from request
 async function parseJsonBody(req) {
   return new Promise((resolve) => {
+    // Handle case when there's no body (e.g., GET requests)
+    if (!req.body && (!req.headers['content-type'] || !req.headers['content-length'])) {
+      console.log('No request body detected');
+      return resolve({});
+    }
+    
     let body = '';
+    
     req.on('data', chunk => {
       body += chunk.toString();
     });
+    
     req.on('end', () => {
+      if (!body || body.trim() === '') {
+        console.log('Empty request body');
+        return resolve({});
+      }
+      
       try {
-        resolve(JSON.parse(body));
+        const parsed = JSON.parse(body);
+        console.log('Parsed request body:', parsed);
+        resolve(parsed);
       } catch (e) {
+        console.error('Failed to parse request body:', e.message, body.substring(0, 100));
         resolve({});
       }
+    });
+    
+    // Handle errors in reading the request body
+    req.on('error', (err) => {
+      console.error('Error reading request body:', err);
+      resolve({});
     });
   });
 }
