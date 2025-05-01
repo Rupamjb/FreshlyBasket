@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 // Import API handlers
 import authHandler from './auth.mjs';
+import proxyHandler from './proxy.mjs';
 
 // Get current directory in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -32,6 +33,12 @@ export default function handler(req, res) {
       // Extract API path
       const apiPath = req.url.substring(5); // Remove "/api/" prefix
       console.log(`API path detected: "${apiPath}"`);
+      
+      // Handle proxy requests to Render backend
+      if (apiPath.startsWith('proxy/')) {
+        console.log('Proxying request to Render backend');
+        return proxyHandler(req, res);
+      }
       
       // Route to specific API handlers based on path
       if (apiPath.startsWith('users')) {

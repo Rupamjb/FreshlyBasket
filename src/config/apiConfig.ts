@@ -83,6 +83,8 @@ export const createFetchOptions = (
     },
     // For Render backend, use 'omit' to prevent CORS issues
     credentials: API_BASE_URL.includes('render.com') ? 'omit' : 'include',
+    // Add mode: 'cors' to properly handle cross-origin requests
+    mode: 'cors'
   };
   
   // Only add timeout for development to prevent timeout issues with slow production servers
@@ -145,6 +147,22 @@ export const fetchWithRetry = async (
     // Check if device is offline
     if (isOffline()) {
       throw new ApiError('You appear to be offline. Please check your internet connection.', 0);
+    }
+
+    // Special handling for Render backend
+    if (url.includes('freshlybasket.onrender.com')) {
+      console.log('Using modified fetch options for Render backend');
+      
+      // For Render backend, we need to modify the options to prevent CORS issues
+      options = {
+        ...options,
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          ...options.headers,
+          'Origin': window.location.origin,
+        }
+      };
     }
 
     const response = await fetch(url, options);

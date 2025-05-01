@@ -1,5 +1,5 @@
 // Define product types
-import { apiUrl, createFetchOptions, apiRequest } from '../config/apiConfig';
+import { apiUrl, createFetchOptions, apiRequest, API_BASE_URL } from '../config/apiConfig';
 
 export interface Product {
   id: string;
@@ -323,6 +323,18 @@ const transformProduct = (dbProduct: any): Product => {
   };
 };
 
+// Function to get API URL - now with proxy support for Render backend
+const getProductApiUrl = (path: string): string => {
+  // If we're using the Render backend, route through our proxy
+  if (API_BASE_URL.includes('freshlybasket.onrender.com')) {
+    // Use our proxy to avoid CORS issues
+    return `/api/proxy/${path}`;
+  }
+  
+  // Use the normal API URL for other cases
+  return apiUrl(`/products${path}`);
+};
+
 // Get all products with filtering options
 export const getProducts = async (
   category?: string,
@@ -342,7 +354,10 @@ export const getProducts = async (
     if (sortBy) queryParams.append('sortBy', sortBy);
     if (sortOrder) queryParams.append('sortOrder', sortOrder);
     
-    const url = `${apiUrl(`/products?${queryParams.toString()}`)}`;
+    // Use the proxy-aware URL function
+    const url = getProductApiUrl(`?${queryParams.toString()}`);
+    console.log('Fetching products from URL:', url);
+    
     const options = createFetchOptions('GET');
     
     // Use the enhanced apiRequest with fallback data
@@ -373,7 +388,10 @@ export const getProducts = async (
 // Get a single product by ID
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    const url = apiUrl(`/products/${id}`);
+    // Use the proxy-aware URL function
+    const url = getProductApiUrl(`/${id}`);
+    console.log('Fetching product by ID from URL:', url);
+    
     const options = createFetchOptions('GET');
     
     // Use enhanced apiRequest with fallback to mock data
