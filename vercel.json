@@ -1,20 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node",
-      "config": {
-        "buildCommand": "npm run vercel-build"
-      }
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "functions": {
+    "api/*.mjs": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/server.js" },
+    { "src": "/api/(.*)", "dest": "/api/server.mjs" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

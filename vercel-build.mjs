@@ -75,7 +75,7 @@ try {
   fs.writeFileSync('./dist/vercel.json', JSON.stringify({
     "routes": [
       { "handle": "filesystem" },
-      { "src": "/api/(.*)", "dest": "/api/server.js" },
+      { "src": "/api/(.*)", "dest": "/api/server.mjs" },
       { "src": "/(.*)", "dest": "/index.html" }
     ]
   }, null, 2));
