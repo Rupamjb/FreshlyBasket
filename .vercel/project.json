@@ -1,0 +1,11 @@
+{
+  "projectId": "prj_vercel_spa_config",
+  "orgId": "your-org-id",
+  "settings": {
+    "framework": "vite",
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install"
+  }
+} 

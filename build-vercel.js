@@ -7,11 +7,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Paths
+// Vercel-specific paths
 const distDir = path.join(__dirname, 'dist');
 const indexHtml = path.join(distDir, 'index.html');
 
-// Create an array of route paths to create HTML files for
+// Important routes that need direct HTML files
 const routes = [
   '/products',
   '/product/1',
@@ -29,9 +29,14 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
-// Read the index.html file
+// Also copy index.html to 404.html for Vercel
 try {
+  // Read the index.html file
   const indexContent = fs.readFileSync(indexHtml, 'utf8');
+  
+  // Create a 404.html in the dist directory
+  fs.writeFileSync(path.join(distDir, '404.html'), indexContent);
+  console.log('Created 404.html fallback file for Vercel');
   
   // For each route, create a corresponding HTML file with the content of index.html
   routes.forEach(route => {
