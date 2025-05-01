@@ -21,8 +21,105 @@ export default async function handler(req, res) {
   let targetPath = '';
   let renderUrl = 'https://freshlybasket.onrender.com';
 
-  // Extract the path part
-  if (url.startsWith('/api/proxy/')) {
+  // Special handling for signup path - completely bypass the normal flow
+  if (url.includes('/users/register') && req.method === 'POST') {
+    console.log('Special direct handling for registration');
+    
+    try {
+      // Extract the request body
+      let requestBody = null;
+      if (req.body) {
+        requestBody = req.body;
+      } else {
+        // If req.body is not parsed, parse it manually
+        const buffers = [];
+        for await (const chunk of req) {
+          buffers.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+        }
+        const data = Buffer.concat(buffers).toString();
+        if (data) {
+          try {
+            requestBody = JSON.parse(data);
+          } catch (e) {
+            console.error('Error parsing register request body:', e);
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid request format',
+              error: e.message
+            });
+          }
+        }
+      }
+      
+      if (!requestBody || !requestBody.email || !requestBody.password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields (email, password)'
+        });
+      }
+
+      console.log('Making direct registration request to Render backend');
+      
+      // Make direct request to the correct API endpoint
+      const response = await fetch(`${renderUrl}/api/users/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': 'https://freshly-basket.vercel.app'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log(`Registration response status: ${response.status}`);
+      
+      // Set response headers and status
+      res.status(response.status);
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+      
+      // Return the response data
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        console.log('Registration response data shape:', Object.keys(data));
+        return res.json(data);
+      } else {
+        const text = await response.text();
+        console.log(`Non-JSON registration response: ${text.substring(0, 100)}...`);
+        return res.send(text);
+      }
+    } catch (error) {
+      console.error('Error in direct registration handler:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error processing registration request',
+        error: error.message
+      });
+    }
+  }
+
+  // Handle auth endpoints directly with specific paths
+  if (url.includes('/users/register') || url.endsWith('users/register')) {
+    targetPath = 'api/users/register';
+    console.log(`Direct auth handling: Register endpoint detected`);
+  } 
+  else if (url.includes('/users/login') || url.endsWith('users/login')) {
+    targetPath = 'api/users/login';
+    console.log(`Direct auth handling: Login endpoint detected`);
+  }
+  else if (url.includes('/users/profile') || url.endsWith('users/profile')) {
+    targetPath = 'api/users/profile';
+    console.log(`Direct auth handling: Profile endpoint detected`);
+  }
+  else if (url.includes('/users/logout') || url.endsWith('users/logout')) {
+    targetPath = 'api/users/logout';
+    console.log(`Direct auth handling: Logout endpoint detected`);
+  }
+  // Regular path extraction for other endpoints
+  else if (url.startsWith('/api/proxy/')) {
     targetPath = url.substring('/api/proxy/'.length);
   } else if (url.startsWith('/proxy/')) {
     targetPath = url.substring('/proxy/'.length);
@@ -97,6 +194,8 @@ export default async function handler(req, res) {
     // Make request to Render backend
     const response = await fetch(`${renderUrl}/${targetPath}`, fetchOptions);
     const contentType = response.headers.get('content-type');
+    
+    console.log(`Actual fetch URL: ${renderUrl}/${targetPath}`);
     
     // Set response status
     res.status(response.status);
