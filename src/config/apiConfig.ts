@@ -13,7 +13,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
 export const BACKUP_API_BASE_URL = import.meta.env.VITE_BACKUP_API_BASE_URL || '';
 
 // Default timeout in milliseconds
-export const DEFAULT_TIMEOUT = 15000;
+export const DEFAULT_TIMEOUT = 60000;
 
 // Maximum number of retries for failed requests
 export const MAX_RETRIES = 3;
@@ -74,8 +74,12 @@ export const createFetchOptions = (
     },
     // Use 'include' for same-origin cookies, 'omit' for cross-origin requests without cookies
     credentials: import.meta.env.PROD ? 'omit' : 'include',
-    signal: AbortSignal.timeout(timeout), // Add timeout
   };
+  
+  // Only add timeout for development to prevent timeout issues with slow production servers
+  if (!import.meta.env.PROD) {
+    options.signal = AbortSignal.timeout(timeout);
+  }
 
   // Add body if it exists
   if (body) {

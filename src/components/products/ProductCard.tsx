@@ -40,7 +40,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Use either image or imageUrl, with imageUrl taking precedence if both exist
-  const displayImage = imageUrl || image || 'https://via.placeholder.com/300?text=No+Image';
+  const displayImage = imageUrl || image || '/assets/placeholder.png';
   
   // Use either id or _id, with _id taking precedence
   const productId = _id || id || '';
@@ -126,7 +126,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
             }`}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
-              e.currentTarget.src = 'https://via.placeholder.com/300?text=Image+Error';
+              e.currentTarget.src = '/assets/placeholder.png';
               setImageLoaded(true);
             }}
           />
