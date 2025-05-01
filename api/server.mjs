@@ -1,7 +1,10 @@
-// Vercel serverless function to handle SPA routing
+// Vercel serverless function to handle SPA routing and API requests
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+// Import API handlers
+import authHandler from './auth.mjs';
 
 // Get current directory in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -9,17 +12,25 @@ const __dirname = path.dirname(__filename);
 
 export default function handler(req, res) {
   // Log the request for debugging
-  console.log(`API Request: ${req.method} ${req.url}`);
+  console.log(`Server Request: ${req.method} ${req.url}`);
   
   try {
     // Handle API requests
     if (req.url.startsWith('/api/')) {
-      // Set proper JSON content type
+      // Extract API path
+      const apiPath = req.url.substring(5); // Remove "/api/" prefix
+      
+      // Route to specific API handlers based on path
+      if (apiPath.startsWith('users/')) {
+        return handleUserRequests(req, res, apiPath);
+      }
+      
+      // Default: API endpoint not found
       res.setHeader('Content-Type', 'application/json');
-      return res.status(404).send(JSON.stringify({
+      return res.status(404).json({
         success: false,
         message: 'API endpoint not found'
-      }));
+      });
     }
     
     // Set appropriate headers for static assets
@@ -60,16 +71,47 @@ export default function handler(req, res) {
     // Return JSON for API errors
     if (req.url.startsWith('/api/')) {
       res.setHeader('Content-Type', 'application/json');
-      return res.status(500).send(JSON.stringify({
+      return res.status(500).json({
         success: false,
         message: 'Internal Server Error',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      }));
+      });
     }
     
     // Return HTML for other errors
     return res.status(500).send('Internal Server Error');
   }
+}
+
+// Handle user API requests
+function handleUserRequests(req, res, apiPath) {
+  // Route different user API endpoints
+  const path = apiPath.substring(6); // Remove "users/" prefix
+  
+  if (path === 'login') {
+    // Rewrite request URL for auth handler
+    req.url = `/api/auth/login`;
+    return authHandler(req, res);
+  }
+  
+  if (path === 'register') {
+    // Rewrite request URL for auth handler
+    req.url = `/api/auth/register`;
+    return authHandler(req, res);
+  }
+  
+  if (path === 'profile') {
+    // Rewrite request URL for auth handler
+    req.url = `/api/auth/profile`;
+    return authHandler(req, res);
+  }
+  
+  // Default: endpoint not found
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(404).json({
+    success: false,
+    message: 'User API endpoint not found'
+  });
 }
 
 // Helper function to determine content type

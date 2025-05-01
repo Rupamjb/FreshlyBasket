@@ -74,8 +74,18 @@ try {
   log('Creating Vercel routes config...');
   fs.writeFileSync('./dist/vercel.json', JSON.stringify({
     "rewrites": [
-      { "source": "/api/(.*)", "destination": "/api/server.mjs" },
+      { "source": "/api/:path*", "destination": "/api/server.mjs" }, 
       { "source": "/(.*)", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "/api/(.*)",
+        "headers": [
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+          { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        ]
+      }
     ]
   }, null, 2));
 
