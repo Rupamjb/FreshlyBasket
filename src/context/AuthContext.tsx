@@ -87,36 +87,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       
       // Log the API URL for debugging
-      console.log('Login API URL:', apiUrl('/api/users/login'));
+      const loginUrl = apiUrl('/api/users/login');
+      console.log('Login API URL:', loginUrl);
       
-      // Make API call to login endpoint
-      const response = await fetch(apiUrl('/api/users/login'), 
-        createFetchOptions('POST', { email, password }, false)
-      );
+      // Make API call to login endpoint with explicit fetch options
+      const options = createFetchOptions('POST', { email, password }, false, 30000);
+      console.log('Login fetch options:', options);
+      
+      const response = await fetch(loginUrl, options);
+      
+      // Log response status and headers for debugging
+      console.log('Login response status:', response.status);
+      console.log('Login response headers:', [...response.headers.entries()]);
       
       // Check for non-JSON responses before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         // If not JSON, try to get text content for debugging
         const textContent = await response.text();
-        console.error('Received non-JSON response:', textContent.substring(0, 100) + '...');
+        console.error('Received non-JSON response:', textContent.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again later.');
       }
       
       const data = await response.json();
+      console.log('Login response data:', data);
       
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
       
       // Store token
-      if (data.data.token) {
+      if (data.data && data.data.token) {
         localStorage.setItem('token', data.data.token);
       }
       
       // Set user in state
       setUser({
-        id: data.data.id,
+        id: data.data.id || data.data._id,
         name: data.data.name,
         email: data.data.email,
         phone: data.data.phone,
@@ -138,36 +145,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       
       // Log the API URL for debugging
-      console.log('Signup API URL:', apiUrl('/api/users/register'));
+      const signupUrl = apiUrl('/api/users/register');
+      console.log('Signup API URL:', signupUrl);
       
-      // Make API call to register endpoint
-      const response = await fetch(apiUrl('/api/users/register'), 
-        createFetchOptions('POST', { name, email, password }, false)
-      );
+      // Make API call to register endpoint with explicit fetch options
+      const options = createFetchOptions('POST', { name, email, password }, false, 30000);
+      console.log('Signup fetch options:', options);
+      
+      const response = await fetch(signupUrl, options);
+      
+      // Log response status and headers for debugging
+      console.log('Signup response status:', response.status);
+      console.log('Signup response headers:', [...response.headers.entries()]);
       
       // Check for non-JSON responses before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         // If not JSON, try to get text content for debugging
         const textContent = await response.text();
-        console.error('Received non-JSON response:', textContent.substring(0, 100) + '...');
+        console.error('Received non-JSON response:', textContent.substring(0, 200));
         throw new Error('Server returned an invalid response. Please try again later.');
       }
       
       const data = await response.json();
+      console.log('Signup response data:', data);
       
       if (!response.ok) {
         throw new Error(data.message || 'Signup failed');
       }
       
       // Store token
-      if (data.data.token) {
+      if (data.data && data.data.token) {
         localStorage.setItem('token', data.data.token);
       }
       
       // Set user in state
       setUser({
-        id: data.data.id,
+        id: data.data.id || data.data._id,
         name: data.data.name,
         email: data.data.email,
         phone: data.data.phone,

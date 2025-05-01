@@ -31,9 +31,18 @@ export const apiUrl = (path: string, useBackup: boolean = false): string => {
   
   // Check if we're using the Render backend
   if (baseUrl.includes('freshlybasket.onrender.com')) {
-    // Remove /api prefix if needed - adjust based on your actual backend API route structure
-    if (cleanPath.startsWith('/api/')) {
-      cleanPath = cleanPath.substring(4); // Remove "/api"
+    // For auth endpoints, use the correct path format for the Render backend
+    if (cleanPath.startsWith('/api/users/login') || cleanPath === '/api/users/login') {
+      cleanPath = '/users/login';
+    } else if (cleanPath.startsWith('/api/users/register') || cleanPath === '/api/users/register') {
+      cleanPath = '/users/register';
+    } else if (cleanPath.startsWith('/api/users/profile') || cleanPath === '/api/users/profile') {
+      cleanPath = '/users/profile';
+    } else if (cleanPath.startsWith('/api/users/logout') || cleanPath === '/api/users/logout') {
+      cleanPath = '/users/logout';
+    } else if (cleanPath.startsWith('/api/')) {
+      // Remove /api prefix for other API endpoints
+      cleanPath = cleanPath.substring(4);
     }
     
     // Log the final URL for debugging
@@ -65,15 +74,15 @@ export const createFetchOptions = (
   includeToken: boolean = true,
   timeout: number = DEFAULT_TIMEOUT
 ): RequestInit => {
-  // Base options with credentials
+  // Base options
   const options: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
-    // Use 'include' for same-origin cookies, 'omit' for cross-origin requests without cookies
-    credentials: import.meta.env.PROD ? 'omit' : 'include',
+    // For Render backend, use 'omit' to prevent CORS issues
+    credentials: API_BASE_URL.includes('render.com') ? 'omit' : 'include',
   };
   
   // Only add timeout for development to prevent timeout issues with slow production servers

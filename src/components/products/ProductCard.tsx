@@ -1,8 +1,11 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '../../utils/currencyUtils';
+
+// Fallback image as base64 data URL (small gray placeholder with product icon)
+const FALLBACK_IMAGE = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMGYwZjAiLz4KPHBhdGggZD0iTTc1IDY1IEwxMjUgNjUgTDEyNSAxMzUgTDc1IDEzNSBaIiBzdHJva2U9IiM5OTkiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNNjUgODUgTDEzNSA4NSIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+";
 
 interface ProductCardProps {
   id?: string;
@@ -38,9 +41,33 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string>('');
 
   // Use either image or imageUrl, with imageUrl taking precedence if both exist
-  const displayImage = imageUrl || image || '/assets/placeholder.png';
+  useEffect(() => {
+    // Set the initial image source
+    const initialImage = imageUrl || image || '';
+    setImageSrc(initialImage);
+    
+    // Pre-load the image to check if it's valid
+    if (initialImage) {
+      const img = new Image();
+      img.onload = () => {
+        setImageSrc(initialImage);
+        setImageLoaded(true);
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load product image: ${initialImage}`);
+        setImageSrc(FALLBACK_IMAGE);
+        setImageLoaded(true);
+      };
+      img.src = initialImage;
+    } else {
+      // No image provided, use fallback
+      setImageSrc(FALLBACK_IMAGE);
+      setImageLoaded(true);
+    }
+  }, [image, imageUrl]);
   
   // Use either id or _id, with _id taking precedence
   const productId = _id || id || '';
@@ -74,7 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
         price,
         discountedPrice,
         quantity: 1,
-        image: displayImage,
+        image: imageSrc,
         category,
         unit: unit || 'item'
       });
@@ -118,15 +145,16 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
         {/* Fixed-height product image container */}
         <div className="relative w-full h-[160px] overflow-hidden bg-gray-50">
           <motion.img 
-            src={displayImage} 
+            src={imageSrc} 
             alt={name} 
             loading="lazy"
             className={`w-full h-full object-contain transition-all duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.currentTarget.src = '/assets/placeholder.png';
+            onError={() => {
+              console.warn(`Error loading image for ${name}`);
+              setImageSrc(FALLBACK_IMAGE);
               setImageLoaded(true);
             }}
           />
