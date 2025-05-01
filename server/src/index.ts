@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser() as any);
+app.use(cookieParser());
 
 // API Routes
 app.get('/api/health', (req: Request, res: Response) => {

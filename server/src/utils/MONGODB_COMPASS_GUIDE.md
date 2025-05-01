@@ -55,6 +55,12 @@ This guide explains how to use MongoDB Compass (a visual GUI tool) to import you
 
 ## Additional Options
 
+
+
+
+
+
+
 If you need to modify your database structure:
 
 1. **Add indexes**: Click on the "Indexes" tab to add indexes for faster searching
