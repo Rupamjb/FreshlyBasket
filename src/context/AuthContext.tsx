@@ -49,8 +49,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const token = localStorage.getItem('token');
         
         if (token) {
+          // Determine if we need to use the proxy for profile endpoint
+          let profileUrl;
+          if (apiUrl('/api/users/profile').includes('freshlybasket.onrender.com')) {
+            profileUrl = '/api/proxy/users/profile';
+          } else {
+            profileUrl = apiUrl('/api/users/profile');
+          }
+
           // Make an API call to verify the token and get the user profile
-          const response = await fetch(apiUrl('/api/users/profile'), 
+          const response = await fetch(
+            profileUrl, 
             createFetchOptions('GET')
           );
           
@@ -86,9 +95,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       
-      // Log the API URL for debugging
-      const loginUrl = apiUrl('/api/users/login');
-      console.log('Login API URL:', loginUrl);
+      // Use proxy endpoint for login to avoid CORS
+      let loginUrl;
+      if (apiUrl('/api/users/login').includes('freshlybasket.onrender.com')) {
+        loginUrl = '/api/proxy/users/login';
+        console.log('Using proxy for login API URL:', loginUrl);
+      } else {
+        loginUrl = apiUrl('/api/users/login');
+        console.log('Login API URL:', loginUrl);
+      }
       
       // Make API call to login endpoint with explicit fetch options
       const options = createFetchOptions('POST', { email, password }, false, 30000);
@@ -144,9 +159,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       
-      // Log the API URL for debugging
-      const signupUrl = apiUrl('/api/users/register');
-      console.log('Signup API URL:', signupUrl);
+      // Use proxy endpoint for signup to avoid CORS
+      let signupUrl;
+      if (apiUrl('/api/users/register').includes('freshlybasket.onrender.com')) {
+        signupUrl = '/api/proxy/users/register';
+        console.log('Using proxy for signup API URL:', signupUrl);
+      } else {
+        signupUrl = apiUrl('/api/users/register');
+        console.log('Signup API URL:', signupUrl);
+      }
       
       // Make API call to register endpoint with explicit fetch options
       const options = createFetchOptions('POST', { name, email, password }, false, 30000);
@@ -200,8 +221,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Logout function
   const logout = async () => {
     try {
+      // Determine if we need to use the proxy for logout endpoint
+      let logoutUrl;
+      if (apiUrl('/api/users/logout').includes('freshlybasket.onrender.com')) {
+        logoutUrl = '/api/proxy/users/logout';
+      } else {
+        logoutUrl = apiUrl('/api/users/logout');
+      }
+      
       // Call the logout API endpoint
-      await fetch(apiUrl('/api/users/logout'), createFetchOptions('GET'));
+      await fetch(logoutUrl, createFetchOptions('GET'));
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -217,8 +246,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setIsLoading(true);
       
+      // Determine if we need to use the proxy for profile endpoint
+      let profileUrl;
+      if (apiUrl('/api/users/profile').includes('freshlybasket.onrender.com')) {
+        profileUrl = '/api/proxy/users/profile';
+      } else {
+        profileUrl = apiUrl('/api/users/profile');
+      }
+      
       // Make API call to update profile
-      const response = await fetch(apiUrl('/api/users/profile'), 
+      const response = await fetch(
+        profileUrl, 
         createFetchOptions('PUT', data)
       );
       

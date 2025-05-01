@@ -7,7 +7,7 @@
 // In production, we'll use the URL from environment variables
 // In development, we'll use localhost
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? 'https://freshlybasket.onrender.com' : 'http://localhost:5001');
+  (import.meta.env.PROD ? 'https://freshlybasket.onrender.com' : 'http://localhost:5000');
 
 // Backup API URL if primary fails
 export const BACKUP_API_BASE_URL = import.meta.env.VITE_BACKUP_API_BASE_URL || '';
