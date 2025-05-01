@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: freshly-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://your-frontend-app.vercel.app
+      - key: COOKIE_SECRET
+        sync: false 
