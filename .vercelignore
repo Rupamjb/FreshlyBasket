@@ -1,7 +1,0 @@
-node_modules
-.git
-server
-.github
-README.md
-build-vercel.js
-api/server.js 
