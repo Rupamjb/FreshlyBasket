@@ -360,29 +360,58 @@ export const getProducts = async (
     
     const options = createFetchOptions('GET');
     
-    // Use the enhanced apiRequest with fallback data
-    return await apiRequest<{ products: Product[], total: number }>(
-      url, 
-      options, 
-      // Fallback data in case of API failure
-      { 
-        products: category 
-          ? mockProducts.filter(p => p.category.toLowerCase() === category.toLowerCase()) 
-          : mockProducts, 
-        total: mockProducts.length 
-      }
-    );
+    // Direct fetch for better error handling with proxy
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Handle different response formats from Render vs. mock
+    let products: Product[] = [];
+    let total = 0;
+    
+    if (data.data && Array.isArray(data.data)) {
+      // Render backend format
+      products = data.data.map(transformProduct);
+      total = data.total || data.data.length;
+    } else if (data.products && Array.isArray(data.products)) {
+      // Direct format
+      products = data.products.map((p: any) => {
+        // Ensure each product has the required fields
+        return {
+          ...p,
+          isNew: typeof p.isNew === 'boolean' ? p.isNew : false,
+          isOrganic: typeof p.isOrganic === 'boolean' ? p.isOrganic : false,
+          isVegan: typeof p.isVegan === 'boolean' ? p.isVegan : false,
+          tags: Array.isArray(p.tags) ? p.tags : []
+        };
+      });
+      total = data.total || products.length;
+    } else {
+      // Unknown format, use fallback
+      console.warn('Unknown API response format:', data);
+      return getFallbackProducts(category);
+    }
+    
+    return { products, total };
   } catch (error) {
     console.error('Error fetching products:', error);
-    // Return mock data in case of any error
-    const filteredProducts = category 
-      ? mockProducts.filter(p => p.category.toLowerCase() === category.toLowerCase()) 
-      : mockProducts;
-    return { 
-      products: filteredProducts, 
-      total: filteredProducts.length 
-    };
+    return getFallbackProducts(category);
   }
+};
+
+// Helper function to get fallback products
+const getFallbackProducts = (category?: string) => {
+  const filteredProducts = category 
+    ? mockProducts.filter(p => p.category.toLowerCase() === category.toLowerCase()) 
+    : mockProducts;
+  return { 
+    products: filteredProducts, 
+    total: filteredProducts.length 
+  };
 };
 
 // Get a single product by ID

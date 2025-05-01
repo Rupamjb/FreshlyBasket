@@ -23,12 +23,23 @@ const Home = () => {
           getProducts(undefined, undefined, 6)
         ]);
         
-        setFeaturedProducts(vegetablesResult.products);
-        setNewProducts(newResult.products.filter(p => p.isNew));
-        setOrganicProducts(organicResult.products.filter(p => p.isOrganic));
+        // Apply safe filtering with fallbacks
+        setFeaturedProducts(vegetablesResult.products || []);
+        
+        // Filter new products safely
+        const newProds = newResult.products || [];
+        setNewProducts(newProds.filter(p => p.isNew === true));
+        
+        // Filter organic products safely 
+        const organicProds = organicResult.products || [];
+        setOrganicProducts(organicProds.filter(p => p.isOrganic === true));
         
       } catch (error) {
         console.error('Error fetching products:', error);
+        // Set empty arrays as fallback
+        setFeaturedProducts([]);
+        setNewProducts([]);
+        setOrganicProducts([]);
       } finally {
         setLoading(false);
       }

@@ -85,10 +85,62 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', contentType);
     }
 
-    // Handle different response types
+    // Log response for debugging
+    console.log(`Proxy response status: ${response.status}`);
+
+    // Handle product data special case
+    if (targetPath === '' || targetPath === '/' || targetPath.startsWith('?')) {
+      // This is likely a products query
+      console.log('Handling products request');
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          
+          // Log data shape for debugging
+          console.log('Products response data shape:', Object.keys(data));
+          
+          // Transform response if needed
+          if (data.data && Array.isArray(data.data)) {
+            // Transform to expected format for frontend
+            const result = {
+              products: data.data,
+              total: data.total || data.data.length
+            };
+            return res.json(result);
+          }
+          
+          // Otherwise just return the original data
+          return res.json(data);
+        } else {
+          const text = await response.text();
+          console.log(`Non-JSON response for products: ${text.substring(0, 100)}...`);
+          return res.send(text);
+        }
+      } catch (error) {
+        console.error('Error handling products response:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error processing products from Render backend',
+          error: error.message
+        });
+      }
+    }
+
+    // Regular handling for other requests
     if (contentType && contentType.includes('application/json')) {
-      const data = await response.json();
-      return res.json(data);
+      try {
+        const data = await response.json();
+        return res.json(data);
+      } catch (error) {
+        console.error('Error parsing JSON response:', error);
+        const text = await response.text();
+        console.log(`Failed to parse JSON: ${text.substring(0, 100)}...`);
+        return res.status(500).json({
+          success: false,
+          message: 'Invalid JSON response from Render backend',
+          error: error.message
+        });
+      }
     } else {
       const text = await response.text();
       return res.send(text);
