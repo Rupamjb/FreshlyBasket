@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useState, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import BackToTop from './components/ui/BackToTop';
 import LoadingScreen from './components/ui/LoadingScreen';

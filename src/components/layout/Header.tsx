@@ -13,7 +13,7 @@ const Header = () => {
   const [isLocating, setIsLocating] = useState(false);
   const { totalItems } = useCart();
   const { user, logout } = useAuth();
-  const { openLogin, openSignup } = useAuthModals();
+  const { openLogin } = useAuthModals();
   const navigate = useNavigate();
   const location = useLocation();
   const [announcementIndex, setAnnouncementIndex] = useState(0);

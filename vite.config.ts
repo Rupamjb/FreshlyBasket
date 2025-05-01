@@ -7,7 +7,7 @@ import fs from 'fs'
 const mimeTypeFix: Plugin = {
   name: 'mime-type-fix',
   writeBundle: {
-    async handler(options) {
+    async handler() {
       // Create .vercel/output/config.json if deploying to Vercel
       const vercelOutputDir = resolve('.vercel/output')
       if (!fs.existsSync(vercelOutputDir)) {

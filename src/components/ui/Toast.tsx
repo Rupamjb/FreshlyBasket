@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiInfo, FiAlertCircle, FiCheckCircle, FiWifi, FiWifiOff } from 'react-icons/fi';
+import { FiX, FiInfo, FiAlertCircle, FiCheckCircle, FiWifiOff } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 
 // Types for toast data
@@ -83,17 +83,14 @@ const Toast: React.FC<Toast & { onClose: () => void }> = ({
 // Provider component that manages all toasts
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
   
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
-      setIsOffline(false);
       addToast('You are back online', 'success');
     };
     
     const handleOffline = () => {
-      setIsOffline(true);
       addToast('You are offline. Some features may be unavailable.', 'offline', 0); // 0 means it won't auto-dismiss
     };
     

@@ -10,7 +10,6 @@ const Cart = () => {
     removeFromCart, 
     updateQuantity, 
     clearCart, 
-    total, 
     subtotal,
     loading,
     error

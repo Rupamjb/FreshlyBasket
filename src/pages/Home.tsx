@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 import { getProducts, Product } from '../services/productService';
 import { motion } from 'framer-motion';
-import { FiClock, FiChevronRight, FiShoppingBag, FiMapPin, FiTruck, FiCheckCircle } from 'react-icons/fi';
+import { FiClock, FiChevronRight, FiMapPin } from 'react-icons/fi';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [organicProducts, setOrganicProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -39,7 +38,7 @@ const Home = () => {
 
     // Rotate slides automatically
     const slideInterval = setInterval(() => {
-      setActiveSlide(prev => (prev === 2 ? 0 : prev + 1));
+      // Slide rotation removed since activeSlide state is no longer used
     }, 5000);
 
     return () => clearInterval(slideInterval);

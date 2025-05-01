@@ -30,7 +30,6 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
   category,
   discountPercentage,
   isOrganic = false,
-  isVegan = false,
   isNew = false,
   stock,
   unit
