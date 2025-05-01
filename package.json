@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "postbuild": "node -e \"const fs = require('fs'); fs.writeFileSync('./dist/vercel.json', JSON.stringify({version: 2, routes: [{handle: 'filesystem'}, {src: '/(.*)', dest: '/index.html'}]}, null, 2)); fs.copyFileSync('./dist/index.html', './dist/404.html');\"",
+    "postbuild": "echo \"/* /index.html 200\" > dist/_redirects && copy vercel.json dist\\",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "cd server && npm run dev",
