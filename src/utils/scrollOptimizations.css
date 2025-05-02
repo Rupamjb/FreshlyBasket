@@ -31,6 +31,39 @@ img, video, iframe {
   content-visibility: auto;
 }
 
+/* Better section transitions */
+section {
+  position: relative;
+  overflow: hidden;
+}
+
+section:after {
+  content: '';
+  display: block;
+  height: 1px;
+  clear: both;
+}
+
+/* Improve section spacing on home page */
+@media (min-width: 768px) {
+  .hero-section + div {
+    margin-top: -1px; /* Remove double border */
+  }
+  
+  section + section {
+    padding-top: 2rem;
+  }
+  
+  /* Smooth shadow transitions between sections */
+  .bg-white + .bg-gray-50 {
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  .bg-gray-50 + .bg-white {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+}
+
 /* Lazy loading images */
 img.lazy {
   opacity: 0;
@@ -74,6 +107,12 @@ img:not(.lazy) {
 
 /* Prevent content jumps when loading new content */
 .content-container {
-  min-height: calc(100vh - 200px);
   contain: layout;
+}
+
+/* Fix the min-height for smaller sections */
+@media (min-width: 768px) {
+  .content-container {
+    min-height: auto;
+  }
 } 
