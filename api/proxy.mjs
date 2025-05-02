@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       console.log('Making direct registration request to Render backend');
       
       // Make direct request to the correct API endpoint
-      const response = await fetch(`${renderUrl}/api/users/signup`, {
+      const response = await fetch(`${renderUrl}/api/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

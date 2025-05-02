@@ -66,8 +66,8 @@ export default function handler(req, res) {
       return handleLogin(req, res);
     }
     
-    // Register endpoint
-    if ((path === '/register' || path === 'register') && req.method === 'POST') {
+    // Register endpoint - handle both /register and /signup paths
+    if ((path === '/register' || path === 'register' || path === '/signup' || path === 'signup') && req.method === 'POST') {
       console.log('Processing register request');
       return handleRegister(req, res);
     }

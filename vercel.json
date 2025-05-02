@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/api/proxy/users/register", "destination": "/api/users_register.mjs" },
     { "source": "/api/proxy/:path*", "destination": "/api/proxy.mjs" },
     { "source": "/api/:path*", "destination": "/api/server.mjs" },
     { "source": "/(.*)", "destination": "/index.html" }

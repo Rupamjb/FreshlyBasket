@@ -127,7 +127,7 @@ function handleUserRequests(req, res, apiPath) {
     return authHandler(req, res);
   }
   
-  if (apiPath === 'users/register' || apiPath === 'users/register/') {
+  if (apiPath === 'users/register' || apiPath === 'users/register/' || apiPath === 'users/signup' || apiPath === 'users/signup/') {
     console.log('Forwarding register request to auth handler');
     // Rewrite request URL for auth handler
     req.url = `/api/auth/register`;

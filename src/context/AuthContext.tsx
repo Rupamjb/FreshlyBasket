@@ -208,7 +208,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       return data;
     } catch (error) {
-      console.error('Signup failed', error);
+      console.error('Signup error:', error);
       throw error;
     } finally {
       setIsLoading(false);
