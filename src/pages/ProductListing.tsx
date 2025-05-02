@@ -80,12 +80,17 @@ const ProductListing = () => {
         // Reset products when filters change
         setProducts([]);
         
+        // Log search parameters for debugging
+        console.log('Fetching products with search query:', searchQuery);
+        
         const result = await getProducts(
           selectedCategory, 
           searchQuery, 
           productsPerPage, 
           1
         );
+        
+        console.log('Received products count:', result.products.length);
         
         setProducts(result.products);
         setTotalProducts(result.total);
@@ -99,7 +104,18 @@ const ProductListing = () => {
     };
     
     fetchInitialProducts();
-  }, [selectedCategory, searchQuery, priceRange, showOrganic, showVegan, sortOption]);
+  }, [selectedCategory, searchQuery, productsPerPage]);
+  
+  // Reset sort and filter options when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      // Reset filtering and sorting options when search is active
+      setShowOrganic(false);
+      setShowVegan(false);
+      setSortOption('featured');
+      setPriceRange([0, 100]);
+    }
+  }, [searchQuery]);
   
   // Fetch more products for infinite scrolling
   useEffect(() => {
@@ -133,8 +149,23 @@ const ProductListing = () => {
   
   // Apply client-side filters
   useEffect(() => {
+    // Log for debugging
+    console.log('Applying client-side filters to', products.length, 'products');
+    
     // Apply client-side filters
     let result = [...products];
+    
+    // If we have a search query, keep only the search results
+    // (server should have already filtered by search, but we'll double-check)
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(product => 
+        product.name.toLowerCase().includes(query) || 
+        product.description.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(query)))
+      );
+    }
     
     // Filter by price range
     result = result.filter(product => 
@@ -170,8 +201,11 @@ const ProductListing = () => {
         break;
     }
     
+    // Log filtered result count
+    console.log('Filtered products count:', result.length);
+    
     setFilteredProducts(result);
-  }, [products, priceRange, showOrganic, showVegan, sortOption]);
+  }, [products, searchQuery, priceRange, showOrganic, showVegan, sortOption]);
   
   const handleCategoryChange = (cat: string | undefined) => {
     setSelectedCategory(cat);

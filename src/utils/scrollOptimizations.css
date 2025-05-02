@@ -1,0 +1,79 @@
+/* Scroll optimizations to prevent lag and ensure smooth scrolling */
+
+html {
+  scroll-behavior: smooth;
+  --scroll-transition: 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Optimize rendering performance */
+body {
+  will-change: scroll-position;
+  overflow-anchor: auto;
+  overscroll-behavior: contain;
+}
+
+/* Disable expensive animations during scrolling */
+body.is-scrolling * {
+  --animation-multiplier: 0.1;
+  transition-duration: 0ms !important;
+  animation-play-state: paused !important;
+}
+
+/* Prevent layout shifts during scrolling */
+img, video, iframe {
+  content-visibility: auto;
+  contain: layout size style paint;
+}
+
+/* Create scroll containment */
+.scroll-container {
+  contain: content;
+  content-visibility: auto;
+}
+
+/* Lazy loading images */
+img.lazy {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+img:not(.lazy) {
+  opacity: 1;
+}
+
+/* Optional: Hide scrollbar for cleaner UI */
+@media (min-width: 1024px) {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* For visible scrollbar styling - smoother appearance */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Prevent content jumps when loading new content */
+.content-container {
+  min-height: calc(100vh - 200px);
+  contain: layout;
+} 

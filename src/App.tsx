@@ -12,6 +12,8 @@ import { OrderProvider } from './context/OrderContext'
 import AuthModalsProvider from './components/auth/AuthModals'
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import NetworkStatusMonitor from './components/ui/NetworkStatusMonitor';
+import { initSmoothScroll, preventScrollJank, setupLazyLoading } from './utils/smoothScroll';
+import './utils/scrollOptimizations.css';
 
 // Lazy load pages for better performance
 const Home = lazy(() => import('./pages/Home'));
@@ -35,6 +37,22 @@ const SuspenseWithErrorBoundary = ({ children }: { children: React.ReactNode }) 
 // Location wrapper for AnimatePresence to work with react-router
 function AnimatedRoutes() {
   const location = useLocation();
+  
+  // Initialize smooth scrolling globally
+  useEffect(() => {
+    // Initialize smooth scrolling
+    initSmoothScroll();
+    
+    // Handle scroll performance optimizations
+    const cleanupScrollJank = preventScrollJank();
+    
+    // Setup lazy loading for images globally
+    setupLazyLoading();
+    
+    return () => {
+      cleanupScrollJank();
+    };
+  }, []);
   
   // Handle 404 errors from URL
   useEffect(() => {
@@ -163,9 +181,9 @@ function App() {
             <OrderProvider>
               <AuthModalsProvider>
                 <NetworkStatusMonitor />
-                <div className="flex flex-col min-h-screen">
+                <div className="flex flex-col min-h-screen scroll-container">
                   <Header />
-                  <main className="flex-grow">
+                  <main className="flex-grow content-container">
                     <AnimatedRoutes />
                   </main>
                   <Footer />

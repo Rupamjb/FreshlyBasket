@@ -1,17 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 import { getProducts, Product } from '../services/productService';
 import { motion } from 'framer-motion';
 import { FiClock, FiChevronRight, FiMapPin } from 'react-icons/fi';
+import { initSmoothScroll, preventScrollJank, setupLazyLoading } from '../utils/smoothScroll';
+import '../utils/scrollOptimizations.css';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [organicProducts, setOrganicProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const homeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Initialize smooth scrolling
+    initSmoothScroll();
+    
+    // Setup scroll jank prevention and get cleanup function
+    const cleanupScrollJank = preventScrollJank();
+    
+    // Setup lazy loading for images
+    setupLazyLoading();
+    
     const fetchProducts = async () => {
       try {
         setLoading(true);
@@ -47,16 +59,14 @@ const Home = () => {
 
     fetchProducts();
 
-    // Rotate slides automatically
-    const slideInterval = setInterval(() => {
-      // Slide rotation removed since activeSlide state is no longer used
-    }, 5000);
-
-    return () => clearInterval(slideInterval);
+    // Clean up on unmount
+    return () => {
+      cleanupScrollJank();
+    };
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div ref={homeRef} className="min-h-screen bg-gray-50 scroll-container">
       {/* Delivery Location Bar - Only visible on desktop */}
       <div className="hidden md:block sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -120,6 +130,7 @@ const Home = () => {
                   src="https://images.unsplash.com/photo-1567306226416-28f0efdc88ce" 
                   alt="Fresh produce" 
                   className="w-full h-[300px] md:h-[400px] object-cover"
+                  loading="eager" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
               </motion.div>
@@ -130,7 +141,7 @@ const Home = () => {
 
       {/* Categories Grid */}
       <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 content-container">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-neutral-800">Shop by Category</h2>
             <Link to="/products" className="text-primary text-sm font-medium flex items-center">
@@ -185,6 +196,7 @@ const Home = () => {
                   <img 
                     src={category.image} 
                     alt={category.name}
+                    loading="lazy"
                     className="w-full h-full object-cover absolute inset-0"
                   />
                 </motion.div>
@@ -198,12 +210,12 @@ const Home = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-8 bg-gray-50">
+        <div className="container mx-auto px-4 content-container">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-neutral-800">Featured Vegetables</h2>
-            <Link to="/products/vegetables" className="text-primary text-sm font-medium flex items-center">
-              See All <FiChevronRight className="ml-1" />
+            <h2 className="text-2xl font-bold text-neutral-800">Featured Products</h2>
+            <Link to="/products" className="text-primary text-sm font-medium flex items-center">
+              View All <FiChevronRight className="ml-1" />
             </Link>
           </div>
           
@@ -214,15 +226,15 @@ const Home = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {featuredProducts.length > 0 ? (
-                featuredProducts.map(product => (
+                featuredProducts.slice(0, 5).map(product => (
                   <ProductCard 
-                    key={product.id || product._id}
+                    key={product.id || product._id} 
                     {...product}
                   />
                 ))
               ) : (
                 <div className="col-span-full text-center py-8">
-                  <p className="text-gray-500">No vegetable products available. Check back soon!</p>
+                  <p className="text-gray-500">No featured products available. Check back soon!</p>
                 </div>
               )}
             </div>
@@ -232,7 +244,7 @@ const Home = () => {
 
       {/* Shop By Ethics Section */}
       <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 content-container">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-neutral-800">Shop By Ethics</h2>
             <Link to="/products/ethics" className="text-primary text-sm font-medium flex items-center">
@@ -286,7 +298,7 @@ const Home = () => {
 
       {/* New Arrivals Section */}
       <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 content-container">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-neutral-800">New Arrivals</h2>
             <Link to="/products?filter=new" className="text-primary text-sm font-medium flex items-center">
@@ -319,7 +331,7 @@ const Home = () => {
 
       {/* Organic Products Section */}
       <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 content-container">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-neutral-800">Organic Products</h2>
             <Link to="/products?filter=organic" className="text-primary text-sm font-medium flex items-center">

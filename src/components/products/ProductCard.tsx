@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from 'react';
+import { useState, memo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { motion } from 'framer-motion';
@@ -42,32 +42,62 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
   const [addError, setAddError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageSrc, setImageSrc] = useState<string>('');
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Setup intersection observer to detect when the card is visible
+  useEffect(() => {
+    if (!cardRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: '100px 0px' }
+    );
+    
+    observer.observe(cardRef.current);
+    
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
 
   // Use either image or imageUrl, with imageUrl taking precedence if both exist
   useEffect(() => {
-    // Set the initial image source
-    const initialImage = imageUrl || image || '';
-    setImageSrc(initialImage);
-    
-    // Pre-load the image to check if it's valid
-    if (initialImage) {
-      const img = new Image();
-      img.onload = () => {
-        setImageSrc(initialImage);
-        setImageLoaded(true);
-      };
-      img.onerror = () => {
-        console.warn(`Failed to load product image: ${initialImage}`);
+    // Only load image when component is visible
+    if (isVisible) {
+      // Set the initial image source
+      const initialImage = imageUrl || image || '';
+      setImageSrc(initialImage);
+      
+      // Pre-load the image to check if it's valid
+      if (initialImage) {
+        const img = new Image();
+        img.onload = () => {
+          setImageSrc(initialImage);
+          setImageLoaded(true);
+        };
+        img.onerror = () => {
+          console.warn(`Failed to load product image: ${initialImage}`);
+          setImageSrc(FALLBACK_IMAGE);
+          setImageLoaded(true);
+        };
+        img.src = initialImage;
+      } else {
+        // No image provided, use fallback
         setImageSrc(FALLBACK_IMAGE);
         setImageLoaded(true);
-      };
-      img.src = initialImage;
-    } else {
-      // No image provided, use fallback
-      setImageSrc(FALLBACK_IMAGE);
-      setImageLoaded(true);
+      }
     }
-  }, [image, imageUrl]);
+  }, [image, imageUrl, isVisible]);
   
   // Use either id or _id, with _id taking precedence
   const productId = _id || id || '';
@@ -132,72 +162,91 @@ const ProductCard: React.FC<ProductCardProps> = memo(({
     ? price - (price * (discountPercentage / 100)) 
     : price;
 
+  // Only animate when the card is visible
+  const animationProps = isVisible ? {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.3 }
+  } : {
+    initial: { opacity: 0 },
+    animate: { opacity: 0 }
+  };
+
   return (
     <motion.div 
+      ref={cardRef}
       className="bg-white rounded-md shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-200 w-full"
-      style={{ height: '320px' }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      style={{ 
+        height: '320px',
+        contain: 'content',
+        contentVisibility: 'auto'
+      }}
+      {...animationProps}
       whileHover={{ y: -2, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
     >
       <Link to={`/product/${productId}`} className="flex-1 flex flex-col h-full">
         {/* Fixed-height product image container */}
         <div className="relative w-full h-[160px] overflow-hidden bg-gray-50">
-          <motion.img 
-            src={imageSrc} 
-            alt={name} 
-            loading="lazy"
-            className={`w-full h-full object-contain transition-all duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => {
-              console.warn(`Error loading image for ${name}`);
-              setImageSrc(FALLBACK_IMAGE);
-              setImageLoaded(true);
-            }}
-          />
+          {isVisible && (
+            <motion.img 
+              src={imageSrc} 
+              alt={name} 
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              className={`w-full h-full object-contain transition-all duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                console.warn(`Error loading image for ${name}`);
+                setImageSrc(FALLBACK_IMAGE);
+                setImageLoaded(true);
+              }}
+            />
+          )}
           
           {/* Loading placeholder */}
-          {!imageLoaded && (
+          {isVisible && !imageLoaded && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
           
-          {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {isNew && (
-              <motion.span 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-[#0F5132] text-white text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
-              >
-                New
-              </motion.span>
-            )}
-            {isOrganic && (
-              <motion.span 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-[#E6B118] text-neutral-800 text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
-              >
-                Organic
-              </motion.span>
-            )}
-            {discountPercentage && (
-              <motion.span 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
-              >
-                -{discountPercentage}%
-              </motion.span>
-            )}
-          </div>
+          {/* Badges - only render when visible */}
+          {isVisible && (
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              {isNew && (
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-[#0F5132] text-white text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
+                >
+                  New
+                </motion.span>
+              )}
+              {isOrganic && (
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-[#E6B118] text-neutral-800 text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
+                >
+                  Organic
+                </motion.span>
+              )}
+              {discountPercentage && (
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
+                >
+                  -{discountPercentage}%
+                </motion.span>
+              )}
+            </div>
+          )}
         </div>
         
         {/* Fixed-height product info area */}

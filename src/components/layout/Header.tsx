@@ -76,6 +76,7 @@ const Header = () => {
 
   // Close mobile menu when changing routes
   useEffect(() => {
+    // Only close mobile menu when pathname changes, not search params
     setMobileMenuOpen(false);
     setMobileSearchOpen(false);
   }, [location.pathname]);
@@ -108,8 +109,13 @@ const Header = () => {
       const currentQuery = searchQuery;
       setSearchQuery('Searching...');
       
+      // Log the search query for debugging
+      console.log('Searching for:', currentQuery.trim());
+      
       // Navigate to the products page with search query parameter
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Make sure to properly encode the search string
+      const encodedQuery = encodeURIComponent(currentQuery.trim());
+      navigate(`/products?search=${encodedQuery}`);
       
       // After a short delay, restore the original query
       setTimeout(() => {

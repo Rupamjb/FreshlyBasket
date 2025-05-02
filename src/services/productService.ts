@@ -345,6 +345,9 @@ export const getProducts = async (
   sortOrder: 'asc' | 'desc' = 'desc'
 ): Promise<{ products: Product[], total: number }> => {
   try {
+    // Log search query for debugging
+    console.log('Search query received:', searchQuery);
+    
     // Build query params
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
