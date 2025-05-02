@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { scrollToElement } from '../../utils/smoothScroll';
 
 // Threshold in pixels for when the button should appear
 const SCROLL_THRESHOLD = 400;
